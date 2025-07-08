@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Productos</title>
+    <link rel="stylesheet" href="estilos.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <nav>
+        <ul style="justify-content: space-between; width: 100%; max-width: 1200px; margin: auto;">
+            <div style="display: flex; gap: 20px;">
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="productos.html">Productos</a></li>
+            </div>
+            <li class="carrito-toggle">
+                🛒 Carrito (<span id="contador">0</span>)
+                <div class="carrito-menu">
+                    <ul id="items-carrito"></ul>
+                    <p>Total: Q<span id="total">0.00</span></p>
+                    <button onclick="vaciarCarrito()">Vaciar</button>
+                    <button onclick="comprar()">Comprar</button>
+                </div>
+            </li>
+        </ul>
+    </nav>
+
+    <header>
+        <h1>Productos: Materiales para Robots Minisumo</h1>
+    </header>
+
+    <main>
+        <section class="productos" id="lista-productos"></section>
+    </main>
+
+    <footer>
+        &copy; 2025 Robots Minisumo | Todos los derechos reservados
+    </footer>
+
+    <script>
+        const productos = [
+            { id: 1, nombre: "Sensor Sharp 4–30cm", descripcion: "Sensor infrarrojo de proximidad ideal para detectar oponentes a corta distancia.", precio: 35,  imagen: "images/1.jpg"},
+            { id: 2, nombre: "Sensor Sharp 10–80cm", descripcion: "Sensor infrarrojo de largo alcance, útil para escanear enemigos antes del contacto.", precio: 40, imagen: "images/2.jpg" },
+            { id: 3, nombre: "Rueda 42mm para Motor N20", descripcion: "Rueda de alto agarre y diseño compacto, perfecta para motores N20.", precio: 15, imagen: "images/3.jpeg" },
+            { id: 4, nombre: "Sensor de Luz", descripcion: "Sensor fotosensible usado para detectar bordes o líneas fuera del área de combate.", precio: 12, imagen: "images/4.jpg" },
+            { id: 5, nombre: "Motor N20 6V 600RPM", descripcion: "Motor con caja reductora de metal, ideal para potencia y velocidad balanceadas.", precio: 28, imagen: "images/5.jpg" },
+            { id: 6, nombre: "Puente H L298N", descripcion: "Controlador de motores que permite manejar velocidad y sentido de giro.", precio: 18, imagen: "images/6.jpg" },
+            { id: 7, nombre: "Batería 9V", descripcion: "Fuente de alimentación portátil y compacta para módulos electrónicos.", precio: 8, imagen: "images/7.jpg" },
+            { id: 8, nombre: "Broche para Batería 9V", descripcion: "Conector seguro para baterías 9V, ideal para prototipado y movilidad.", precio: 5, imagen: "images/8.jpg" },
+            { id: 9, nombre: "Arduino Nano", descripcion: "Microcontrolador pequeño y versátil, el cerebro del robot Minisumo.", precio: 55, imagen: "images/9.jpg" },
+            { id: 10, nombre: "Shield para Nano", descripcion: "Expansión para Arduino Nano que facilita las conexiones y montaje.", precio: 22, imagen: "images/10.jpg" },
+            { id: 11, nombre: "Cables Jumper", descripcion: "Conjunto de cables para prototipado rápido y conexión entre módulos.", precio: 10, imagen: "images/11.jpg" }
+        ];
+
+        let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+
+        function renderProductos() {
+            const contenedor = document.getElementById('lista-productos');
+            contenedor.innerHTML = '';
+            productos.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'producto';
+                div.innerHTML = `
+                    <img src="${p.imagen}" alt="${p.nombre}">
+                    <h3>${p.nombre}</h3>
+                    <p>${p.descripcion}</p>
+                    <p><strong>Q${p.precio.toFixed(2)}</strong></p>
+                    <button onclick="agregarCarrito(${p.id})">Agregar al carrito</button>
+                `;
+                contenedor.appendChild(div);
+            });
+        }
+
+        function agregarCarrito(id) {
+            const index = carrito.findIndex(p => p.id === id);
+            if (index !== -1) {
+                carrito[index].cantidad++;
+            } else {
+                const producto = productos.find(p => p.id === id);
+                carrito.push({ ...producto, cantidad: 1 });
+            }
+            Swal.fire({
+                icon: 'success',
+                title: 'Producto agregado',
+                text: 'Se agregó al carrito correctamente',
+                toast: true,
+                position: 'top-end',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            actualizarCarrito();
+        }
+
+        function eliminarProducto(id) {
+            const i = carrito.findIndex(p => p.id === id);
+            if (i !== -1) {
+                carrito[i].cantidad--;
+                if (carrito[i].cantidad <= 0) carrito.splice(i, 1);
+                actualizarCarrito();
+            }
+        }
+
+        function vaciarCarrito() {
+            carrito.length = 0;
+            actualizarCarrito();
+        }
+
+        function actualizarCarrito() {
+            localStorage.setItem('carrito', JSON.stringify(carrito));
+
+            const cantidadTotal = carrito.reduce((a, b) => a + b.cantidad, 0);
+            const total = carrito.reduce((s, p) => s + p.precio * p.cantidad, 0);
+
+            document.getElementById('contador').textContent = cantidadTotal;
+            document.getElementById('total').textContent = total.toFixed(2);
+
+            const lista = document.getElementById('items-carrito');
+            lista.innerHTML = '';
+            carrito.forEach((item) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    ${item.nombre} x ${item.cantidad} - Q${(item.precio * item.cantidad).toFixed(2)}
+                    <div>
+                        <button onclick="agregarCarrito(${item.id})">+</button>
+                        <button onclick="eliminarProducto(${item.id})">-</button>
+                    </div>
+                `;
+                lista.appendChild(li);
+            });
+        }
+
+        function comprar() {
+            if (carrito.length === 0) {
+                Swal.fire({ icon: 'info', title: 'Tu carrito está vacío', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
+                return;
+            }
+            Swal.fire({
+                icon: 'success',
+                title: '¡Gracias por tu compra!',
+                text: 'Procesando pedido...',
+                confirmButtonText: 'OK'
+            });
+            vaciarCarrito();
+        }
+
+        renderProductos();
+        actualizarCarrito();
+    </script>
+</body>
+</html>
